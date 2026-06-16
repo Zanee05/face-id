@@ -1,0 +1,105 @@
+@startuml Use Case Diagram - Sistem Absensi Face ID
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam ArrowColor #374151
+
+skinparam usecase {
+    BackgroundColor #DBEAFE
+    BorderColor #2563EB
+    FontColor #1E3A8A
+}
+
+skinparam actor {
+    BackgroundColor #FEF3C7
+    BorderColor #D97706
+    FontColor #92400E
+}
+
+left to right direction
+
+title Use Case Diagram - Sistem Absensi Berbasis Face ID\n(Fokus: Face ID)
+
+' ─── AKTOR ───────────────────────────────────────────────
+actor "Mahasiswa" as MHS
+actor "Dosen" as DOSEN
+actor "Admin" as ADMIN
+
+' ─── SISTEM ──────────────────────────────────────────────
+rectangle "SISTEM ABSENSI FACE ID" as SYS {
+
+    ' Auth
+    usecase "Login" as UC_LOGIN
+    usecase "Logout" as UC_LOGOUT
+
+    ' Mahasiswa
+    usecase "Registrasi Wajah\n(5 Foto Multi-Angle)" as UC_REG
+    usecase "Lihat Rekap Absensi" as UC_REKAP_MHS
+    usecase "Susun Mata Kuliah (KRS)" as UC_KRS
+
+    ' Dosen
+    usecase "Buat Sesi Absensi\nFace ID" as UC_BUAT_SESI
+    usecase "Buka Kiosk Face ID" as UC_KIOSK
+    usecase "Identifikasi Wajah\n(Auto Scan)" as UC_IDENTIFY
+    usecase "Tutup Sesi Absensi" as UC_TUTUP
+    usecase "Lihat Rekap Absensi\nMahasiswa" as UC_REKAP_DOSEN
+    usecase "Verifikasi Absensi\n(Approve/Reject)" as UC_VERIFY
+    usecase "Export Rekap (Excel)" as UC_EXPORT
+
+    ' Admin
+    usecase "Kelola Data User\n(CRUD)" as UC_USER
+    usecase "Kelola Kelas\n(CRUD)" as UC_KELAS
+    usecase "Kelola Mata Kuliah\n(CRUD)" as UC_MK
+    usecase "Kelola Jadwal\n(CRUD)" as UC_JADWAL
+    usecase "Reset Face ID\nMahasiswa" as UC_RESET
+    usecase "Normalisasi Embedding\nWajah" as UC_NORM
+    usecase "Pantau Activity Log" as UC_LOG
+    usecase "Monitoring Absensi\nReal-time" as UC_MONITOR
+
+    ' Include / Extend
+    usecase "Verifikasi Wajah\n(calculateDistance\n+ calculateConfidence)" as UC_VERIFY_FACE
+    usecase "Simpan Data\nKehadiran" as UC_SIMPAN
+    usecase "Catat Face Log\n(distance, confidence)" as UC_FACELOG
+}
+
+' ─── RELASI MAHASISWA ────────────────────────────────────
+MHS --> UC_LOGIN
+MHS --> UC_REG
+MHS --> UC_REKAP_MHS
+MHS --> UC_KRS
+MHS --> UC_LOGOUT
+
+' ─── RELASI DOSEN ────────────────────────────────────────
+DOSEN --> UC_LOGIN
+DOSEN --> UC_BUAT_SESI
+DOSEN --> UC_KIOSK
+DOSEN --> UC_TUTUP
+DOSEN --> UC_REKAP_DOSEN
+DOSEN --> UC_VERIFY
+DOSEN --> UC_EXPORT
+DOSEN --> UC_LOGOUT
+
+' ─── RELASI ADMIN ────────────────────────────────────────
+ADMIN --> UC_LOGIN
+ADMIN --> UC_USER
+ADMIN --> UC_KELAS
+ADMIN --> UC_MK
+ADMIN --> UC_JADWAL
+ADMIN --> UC_RESET
+ADMIN --> UC_NORM
+ADMIN --> UC_LOG
+ADMIN --> UC_MONITOR
+ADMIN --> UC_LOGOUT
+
+' ─── INCLUDE ─────────────────────────────────────────────
+UC_KIOSK       .> UC_IDENTIFY    : <<include>>
+UC_IDENTIFY    .> UC_VERIFY_FACE : <<include>>
+UC_VERIFY_FACE .> UC_SIMPAN      : <<include>>
+UC_VERIFY_FACE .> UC_FACELOG     : <<include>>
+
+' ─── EXTEND ──────────────────────────────────────────────
+UC_SIMPAN .> UC_REKAP_DOSEN : <<extend>>
+UC_SIMPAN .> UC_REKAP_MHS   : <<extend>>
+
+@enduml

@@ -1,0 +1,110 @@
+@startuml Flowchart Registrasi Wajah - Simple
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam ArrowColor #374151
+skinparam ArrowThickness 2
+
+skinparam activity {
+    BackgroundColor #D1FAE5
+    BorderColor #059669
+    FontColor #065F46
+    DiamondBackgroundColor #FEF3C7
+    DiamondBorderColor #D97706
+    DiamondFontColor #92400E
+}
+
+skinparam startColor #16A34A
+skinparam endColor #DC2626
+
+title Flowchart Registrasi Wajah Mahasiswa\nSIAKAD - Universitas PGRI Kanjuruhan Malang
+
+start
+
+:Mahasiswa login ke SIAKAD;
+
+:Buka menu "Registrasi Face ID";
+
+:Sistem menyalakan kamera;
+
+if (Kamera berhasil aktif?) then (Tidak)
+    :Tampilkan pesan error\nIzinkan akses kamera di browser;
+    stop
+else (Ya)
+endif
+
+:Klik tombol\n"Mulai Registrasi Wajah (5 Foto)";
+
+note right
+    Siapkan kondisi terbaik:
+    - Pencahayaan cukup & merata
+    - Wajah terlihat jelas
+    - Jarak 30-50 cm dari kamera
+    - Tidak pakai masker / kacamata hitam
+end note
+
+:Foto 1 — Posisi DEPAN\nWajah lurus menghadap kamera;
+
+if (Wajah terdeteksi?) then (Tidak)
+    :Pesan: "Wajah tidak terdeteksi"\nAtur posisi & pencahayaan;
+    :Ulangi foto ini;
+else (Ya)
+    :✅ Foto 1 tersimpan;
+endif
+
+:Foto 2 — Posisi KIRI\nPutar kepala sedikit ke kiri;
+
+if (Wajah terdeteksi?) then (Tidak)
+    :Ulangi foto ini;
+else (Ya)
+    :✅ Foto 2 tersimpan;
+endif
+
+:Foto 3 — Posisi KANAN\nPutar kepala sedikit ke kanan;
+
+if (Wajah terdeteksi?) then (Tidak)
+    :Ulangi foto ini;
+else (Ya)
+    :✅ Foto 3 tersimpan;
+endif
+
+:Foto 4 — Posisi ATAS\nAngkat kepala sedikit ke atas;
+
+if (Wajah terdeteksi?) then (Tidak)
+    :Ulangi foto ini;
+else (Ya)
+    :✅ Foto 4 tersimpan;
+endif
+
+:Foto 5 — Posisi BAWAH\nTundukkan kepala sedikit ke bawah;
+
+if (Wajah terdeteksi?) then (Tidak)
+    :Ulangi foto ini;
+else (Ya)
+    :✅ Foto 5 tersimpan;
+endif
+
+:Sistem menggabungkan 5 foto\nmenjadi 1 data wajah;
+
+:Data wajah dikirim & disimpan\nke database;
+
+if (Penyimpanan berhasil?) then (Tidak)
+    :Tampilkan pesan error\nCoba ulangi dari awal;
+    stop
+else (Ya)
+endif
+
+:🎉 Registrasi Wajah Berhasil!\nStatus Face ID: Sudah Terdaftar;
+
+note right
+    Setelah registrasi:
+    - Wajah siap digunakan untuk absensi
+    - Bisa diperbarui kapan saja
+    - Absensi dilakukan saat dosen
+      membuka sesi di kelas
+end note
+
+stop
+
+@enduml

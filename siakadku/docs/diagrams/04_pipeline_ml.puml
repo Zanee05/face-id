@@ -1,0 +1,144 @@
+@startuml Pipeline Machine Learning Face Recognition
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam ArrowColor #374151
+skinparam ArrowThickness 2
+
+skinparam component {
+    BackgroundColor #EDE9FE
+    BorderColor #7C3AED
+    FontColor #4C1D95
+}
+
+skinparam package {
+    BackgroundColor #F5F3FF
+    BorderColor #7C3AED
+    FontColor #4C1D95
+    FontStyle bold
+}
+
+skinparam note {
+    BackgroundColor #FEF9C3
+    BorderColor #CA8A04
+    FontColor #713F12
+}
+
+title Pipeline Machine Learning - Face Recognition\nSIAKAD Absensi Face ID
+
+' ─── INPUT ───────────────────────────────────────────────
+package "INPUT" as INPUT {
+    component [Video Frame\n(dari Webcam/DroidCam)\nFormat: RGB/YUV] as VF
+}
+
+' ─── PREPROCESSING ───────────────────────────────────────
+package "PREPROCESSING\n(Browser - JavaScript)" as PREP {
+    component [drawImage() ke Canvas\nDecode pixel → RGBA\n(Fix DroidCam format)] as DI
+    component [Resize & Normalize\nInput: 416×416 px\nNilai pixel: 0.0–1.0] as RN
+}
+
+' ─── FACE DETECTION ──────────────────────────────────────
+package "STAGE 1: FACE DETECTION\n(TinyFaceDetector - face-api.js)" as FD {
+    component [Convolutional Neural Network\n(MobileNet-based)\nPre-trained model] as CNN1
+    component [Bounding Box\n[x, y, width, height]\nScore threshold: 0.35] as BB
+}
+
+note right of FD
+  Model: tiny_face_detector
+  Input: 416×416
+  Output: bounding boxes
+  Deteksi: multi-face
+end note
+
+' ─── LANDMARK DETECTION ──────────────────────────────────
+package "STAGE 2: LANDMARK DETECTION\n(FaceLandmark68Net)" as LD {
+    component [68 Titik Landmark\n(mata, hidung, mulut,\nrahang, alis)] as LM
+    component [Face Alignment\n(normalisasi posisi wajah)] as FA
+}
+
+note right of LD
+  Model: face_landmark_68
+  Output: 68 koordinat (x,y)
+  Digunakan untuk alignment
+end note
+
+' ─── FEATURE EXTRACTION ──────────────────────────────────
+package "STAGE 3: FEATURE EXTRACTION\n(FaceRecognitionNet)" as FE {
+    component [Deep Neural Network\n(ResNet-34 based)\nPre-trained on LFW dataset] as DNN
+    component [Face Descriptor\n128-dimensional vector\n(Float32Array)] as DESC
+}
+
+note right of FE
+  Model: face_recognition
+  Output: 128-dim embedding
+  Setiap wajah → vektor unik
+end note
+
+' ─── NORMALIZATION ───────────────────────────────────────
+package "STAGE 4: NORMALIZATION\n(PHP Backend)" as NORM {
+    component [L2 Normalization\n||v|| = sqrt(Σ vi²)\nnorm_v = v / ||v||] as L2
+    component [Unit Vector\n(magnitude = 1.0)\nSkala tidak mempengaruhi] as UV
+}
+
+note right of NORM
+  Tujuan: konsistensi jarak
+  Sebelum: magnitude ~12–15
+  Sesudah: magnitude = 1.0
+end note
+
+' ─── MATCHING ────────────────────────────────────────────
+package "STAGE 5: FACE MATCHING\n(PHP Backend)" as MATCH {
+    component [Euclidean Distance\nd = sqrt(Σ(ai - bi)²)\n(normalized vectors)] as ED
+    component [Threshold Check\nd < 0.60 ?\n(FACE_DISTANCE_THRESHOLD)] as TC
+    component [Confidence Score\ncos(d/threshold × π/2) × 100\nFormula: cosine mapping] as CS
+    component [Min Confidence Check\nconfidence ≥ 80% ?\n(MIN_CONFIDENCE_THRESHOLD)] as MCC
+}
+
+note right of MATCH
+  Contoh hasil:
+  distance=0.10 → 96.6%
+  distance=0.15 → 92.4%
+  distance=0.20 → 86.6%
+  distance=0.25 → 79.3%
+end note
+
+' ─── OUTPUT ──────────────────────────────────────────────
+package "OUTPUT" as OUTPUT {
+    component [BERHASIL\nAbsensi tersimpan\n(confidence, metode, jam)] as OK #D1FAE5
+    component [GAGAL\nWajah tidak cocok\natau confidence rendah] as FAIL #FEE2E2
+}
+
+' ─── STORAGE ─────────────────────────────────────────────
+package "STORAGE" as STORE {
+    component [face_data\n(embedding JSON)] as FDS
+    component [absensi\n(confidence, status)] as ABS
+    component [face_logs\n(distance, confidence)] as FLS
+}
+
+' ─── ALUR ────────────────────────────────────────────────
+VF  --> DI   : raw frame
+DI  --> RN   : RGBA canvas
+RN  --> CNN1 : normalized tensor
+CNN1 --> BB  : detection result
+BB  --> LM   : cropped face region
+LM  --> FA   : 68 landmarks
+FA  --> DNN  : aligned face
+DNN --> DESC : forward pass
+DESC --> L2  : raw 128-dim vector
+L2  --> UV   : normalized vector
+
+UV  --> ED   : compare with stored embedding
+FDS --> ED   : stored embedding (normalized)
+ED  --> TC   : distance value
+TC  --> CS   : distance < threshold
+CS  --> MCC  : confidence score
+
+MCC --> OK   : confidence ≥ 80%
+MCC --> FAIL : confidence < 80%
+
+OK  --> ABS  : simpan absensi
+OK  --> FLS  : log success
+FAIL --> FLS : log failed
+
+@enduml

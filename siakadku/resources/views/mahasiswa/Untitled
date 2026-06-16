@@ -1,0 +1,180 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="app-main">
+<div class="container" style="max-width: 560px;">
+
+    {{-- Flash messages --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-3" role="alert">
+            ✅ {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
+            ❌ {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger shadow-sm mb-3">
+            @foreach($errors->all() as $error)
+                <div>❌ {{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Status sesi --}}
+    @if(isset($statusMessage) && $statusMessage && ($statusType ?? 'info') !== 'info')
+        <div class="alert alert-{{ $statusType }} shadow-sm mb-3">
+            {{ $statusMessage }}
+        </div>
+    @endif
+
+    {{-- Info Sesi Card --}}
+    <div class="card shadow-sm mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between py-3">
+            <span class="fw-semibold">Info Sesi</span>
+            @if($sessionData)
+                @if($sessionData->is_active)
+                    <span class="badge bg-success rounded-pill">🟢 Aktif</span>
+                @else
+                    <span class="badge bg-danger rounded-pill">🔴 Ditutup</span>
+                @endif
+            @endif
+        </div>
+        <div class="card-body p-0">
+            @if($sessionData)
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="ps-4 text-secondary" style="width:45%">Mata Kuliah</td>
+                            <td class="fw-semibold text-end pe-4">{{ optional($sessionData->mataKuliah)->nama_mk }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 text-secondary">Kelas</td>
+                            <td class="fw-semibold text-end pe-4">{{ optional($sessionData->kelas)->nama_kelas }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 text-secondary">Tanggal</td>
+                            <td class="fw-semibold text-end pe-4">{{ $sessionData->session_date->format('d M Y') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 text-secondary border-0">Waktu</td>
+                            <td class="fw-semibold text-end pe-4 border-0">{{ $sessionData->start_time }} – {{ $sessionData->end_time }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            @else
+                <div class="p-4 text-center text-danger">
+                    <p class="mb-0 fw-semibold">Data sesi tidak ditemukan atau tidak valid.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Form Absensi --}}
+    @if($sessionData && $sessionData->is_active && ($statusType ?? 'info') !== 'danger')
+        <div class="card shadow-sm mb-3">
+            <div class="card-header py-3">
+                <span class="fw-semibold">Verifikasi Absensi</span>
+            </div>
+            <div class="card-body p-4">
+
+                @if(session('success'))
+                    {{-- Tampilkan pesan sukses besar --}}
+                    <div class="text-center py-3">
+                        <div style="font-size: 3rem; line-height:1;">✅</div>
+                        <h5 class="mt-2 fw-bold text-success">Absensi Tercatat!</h5>
+                        <p class="text-secondary mb-0">Kehadiran Anda sudah berhasil dicatat.</p>
+                    </div>
+                @else
+                    <form method="POST" action="{{ route('mahasiswa.sessions.submit') }}" id="absen_form">
+                        @csrf
+                        <input type="hidden" name="session" value="{{ $scanParams['session'] }}">
+
+                        {{-- Token --}}
+                        @if(!empty($scanParams['token']))
+                            <input type="hidden" name="token" value="{{ $scanParams['token'] }}">
+                            <div class="mb-3 p-3 rounded-3" style="background:#f0f6ff; border:1px solid #c7d8f8;">
+                                <div class="text-secondary small mb-1 fw-semibold">🔑 Token Sesi</div>
+                                <code class="fs-6 fw-bold text-primary">{{ $scanParams['token'] }}</code>
+                                <div class="text-secondary small mt-1">Token terverifikasi dari QR Code ✓</div>
+                            </div>
+                        @else
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">🔑 Token Sesi Absensi</label>
+                                <input type="text" name="token"
+                                    class="form-control @error('token') is-invalid @enderror"
+                                    value="{{ old('token') }}"
+                                    placeholder="Masukkan token dari dosen"
+                                    autocomplete="off"
+                                    style="text-transform:uppercase;letter-spacing:.08em"
+                                    required>
+                                @error('token')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
+
+                        {{-- Email --}}
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">📧 Email Mahasiswa</label>
+                            <input type="email" name="email"
+                                class="form-control @error('email') is-invalid @enderror"
+                                value="{{ old('email', $scanParams['email'] ?? '') }}"
+                                placeholder="email@kampus.ac.id"
+                                inputmode="email"
+                                autocomplete="email"
+                                required>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">Gunakan email yang terdaftar di SIAKAD</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary py-2" id="submit_btn">
+                                Verifikasi & Catat Absensi
+                            </button>
+                        </div>
+                    </form>
+                @endif
+
+            </div>
+        </div>
+    @elseif($sessionData && !$sessionData->is_active)
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-4">
+                <div style="font-size:2.5rem">🔒</div>
+                <h6 class="mt-2 fw-bold text-danger">Sesi Sudah Ditutup</h6>
+                <p class="text-secondary small mb-0">Hubungi dosen jika ada kendala.</p>
+            </div>
+        </div>
+    @endif
+
+</div>
+</div>
+
+<script>
+    const form = document.getElementById('absen_form');
+    const btn  = document.getElementById('submit_btn');
+    if (form && btn) {
+        form.addEventListener('submit', function() {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
+        });
+    }
+    const tokenInput = document.querySelector('input[name="token"]:not([type="hidden"])');
+    if (tokenInput) {
+        tokenInput.addEventListener('input', function() {
+            const pos = this.selectionStart;
+            this.value = this.value.toUpperCase();
+            this.setSelectionRange(pos, pos);
+        });
+    }
+</script>
+@endsection

@@ -1,0 +1,173 @@
+@startuml Arsitektur Sistem SIAKAD Face ID
+
+!define RECTANGLE class
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.5
+
+skinparam package {
+    BackgroundColor #EEF4FF
+    BorderColor #3B82F6
+    FontColor #1E3A8A
+    FontStyle bold
+}
+
+skinparam component {
+    BackgroundColor #DBEAFE
+    BorderColor #2563EB
+    FontColor #1E3A8A
+}
+
+skinparam database {
+    BackgroundColor #D1FAE5
+    BorderColor #059669
+    FontColor #065F46
+}
+
+skinparam actor {
+    BackgroundColor #FEF3C7
+    BorderColor #D97706
+    FontColor #92400E
+}
+
+title Arsitektur Sistem SIAKAD - Absensi Berbasis Face ID\nUniversitas PGRI Kanjuruhan Malang
+
+' ─── AKTOR ───────────────────────────────────────────────
+actor "Admin" as ADMIN #FEF3C7
+actor "Dosen" as DOSEN #FEF3C7
+actor "Mahasiswa" as MHS #FEF3C7
+
+' ─── LAYER BROWSER / CLIENT ──────────────────────────────
+package "CLIENT LAYER\n(Web Browser)" as CLIENT {
+
+    package "face-api.js (TensorFlow.js)" as FACEAPI {
+        component [TinyFaceDetector\nModel] as TFD
+        component [FaceLandmark68\nModel] as FLM
+        component [FaceRecognition\nModel] as FRM
+    }
+
+    component [Offscreen Canvas\n(Frame Capture)] as CANVAS
+    component [Kamera / Webcam\n(Built-in / DroidCam)] as CAM
+    component [Browser UI\n(Blade + Bootstrap)] as UI
+}
+
+' ─── LAYER MIDDLEWARE ─────────────────────────────────────
+package "MIDDLEWARE LAYER\n(Laravel)" as MW {
+    component [Auth Middleware\n(Authenticate)] as AUTH
+    component [Role Middleware\n(admin/dosen/mahasiswa)] as ROLE
+    component [CSRF Protection] as CSRF
+    component [Session Handler] as SESSION
+}
+
+' ─── LAYER CONTROLLER ────────────────────────────────────
+package "CONTROLLER LAYER" as CTRL {
+
+    package "Admin" as CADMIN {
+        component [DashboardController\n+ normalizeEmbeddings()] as CDC
+        component [UserController] as CUC
+        component [MahasiswaController] as CMC
+        component [KelasController] as CKC
+        component [MataKuliahController] as CMKC
+        component [JadwalKelasController] as CJKC
+    }
+
+    package "Dosen" as CDOSEN {
+        component [AttendanceSession\nController\n+ identifyFace()] as CASC
+        component [AbsensiController\n+ verify()] as CAC
+    }
+
+    package "Mahasiswa" as CMHS {
+        component [AbsensiController\n+ store() registerFace] as CMAC
+        component [MataKuliahController] as CMMKC
+    }
+}
+
+' ─── LAYER TRAIT / SERVICE ───────────────────────────────
+package "TRAIT / BUSINESS LOGIC" as TRAIT {
+    component [FaceRecognitionTrait\n- normalizeEmbedding()\n- calculateDistance()\n- calculateConfidence()\n- validateFaceRecognition()] as FRT
+}
+
+' ─── LAYER MODEL ─────────────────────────────────────────
+package "MODEL LAYER\n(Eloquent ORM)" as MODEL {
+    component [User] as MU
+    component [Mahasiswa] as MM
+    component [Dosen] as MD
+    component [FaceData\n(embedding: longtext)] as MFD
+    component [AttendanceSession] as MAS
+    component [Absensi\n(confidence, metode)] as MAB
+    component [FaceLog\n(distance, confidence)] as MFL
+    component [ActivityLog] as MAL
+    component [MataKuliah] as MMK
+    component [Kelas] as MK
+    component [JadwalKelas] as MJK
+}
+
+' ─── LAYER DATABASE ──────────────────────────────────────
+database "MySQL Database\n(dbsiakadku)" as DB {
+    component [users] as TU
+    component [mahasiswas] as TM
+    component [dosens] as TD
+    component [face_data] as TFD2
+    component [attendance_sessions] as TAS
+    component [absensi] as TAB
+    component [face_logs] as TFL
+    component [activity_logs] as TAL
+    component [mata_kuliah] as TMK
+    component [kelas] as TK
+    component [jadwal_kelas] as TJK
+    component [mahasiswa_mata_kuliah] as TMMK
+}
+
+' ─── RELASI AKTOR → UI ───────────────────────────────────
+ADMIN --> UI : akses browser
+DOSEN --> UI : akses browser
+MHS   --> UI : akses browser
+
+' ─── RELASI KAMERA → FACE API ────────────────────────────
+CAM --> CANVAS : video stream
+CANVAS --> TFD  : frame (drawImage)
+TFD --> FLM     : detected faces
+FLM --> FRM     : landmarks
+FRM --> UI      : 128-dim embedding
+
+' ─── RELASI UI → MIDDLEWARE ──────────────────────────────
+UI --> AUTH    : HTTP Request
+AUTH --> ROLE  : authenticated
+ROLE --> CSRF  : role check
+CSRF --> SESSION : valid
+
+' ─── RELASI MIDDLEWARE → CONTROLLER ─────────────────────
+SESSION --> CADMIN : role=admin
+SESSION --> CDOSEN : role=dosen
+SESSION --> CMHS   : role=mahasiswa
+
+' ─── RELASI CONTROLLER → TRAIT ───────────────────────────
+CASC --> FRT : use FaceRecognitionTrait
+CMAC --> FRT : use FaceRecognitionTrait
+
+' ─── RELASI CONTROLLER → MODEL ───────────────────────────
+CASC --> MAS : create/update session
+CASC --> MAB : create absensi
+CASC --> MFD : read embedding
+CASC --> MFL : create face log
+CASC --> MAL : create activity log
+CMAC --> MFD : updateOrCreate embedding
+CAC  --> MAB : verify absensi
+CDC  --> MFD : normalize embeddings
+
+' ─── RELASI MODEL → DATABASE ─────────────────────────────
+MU   --> TU
+MM   --> TM
+MD   --> TD
+MFD  --> TFD2
+MAS  --> TAS
+MAB  --> TAB
+MFL  --> TFL
+MAL  --> TAL
+MMK  --> TMK
+MK   --> TK
+MJK  --> TJK
+
+@enduml

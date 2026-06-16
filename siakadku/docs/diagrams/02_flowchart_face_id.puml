@@ -1,0 +1,91 @@
+@startuml Flowchart Absensi Face ID - Simple
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam ArrowColor #374151
+skinparam ArrowThickness 2
+
+skinparam activity {
+    BackgroundColor #DBEAFE
+    BorderColor #2563EB
+    FontColor #1E3A8A
+    DiamondBackgroundColor #FEF3C7
+    DiamondBorderColor #D97706
+    DiamondFontColor #92400E
+}
+
+skinparam startColor #16A34A
+skinparam endColor #DC2626
+
+title Flowchart Absensi Face ID\nSIAKAD - Universitas PGRI Kanjuruhan Malang
+
+start
+
+:Dosen membuka halaman Kiosk Face ID;
+
+:Sistem menyalakan kamera;
+
+if (Kamera berhasil aktif?) then (Tidak)
+    :Tampilkan pesan error kamera;
+    stop
+else (Ya)
+endif
+
+:Mahasiswa berdiri di depan kamera;
+
+:Sistem mendeteksi wajah secara otomatis;
+
+if (Wajah terdeteksi?) then (Tidak)
+    :Kotak hijau tidak muncul\nMahasiswa perlu menghadap kamera;
+    note right
+        Pastikan:
+        - Wajah menghadap kamera
+        - Pencahayaan cukup
+        - Jarak 30-80 cm
+    end note
+    :Ulangi deteksi;
+else (Ya)
+    :Kotak hijau muncul di sekitar wajah;
+endif
+
+:Sistem mencocokkan wajah\ndengan data yang tersimpan;
+
+if (Wajah dikenali?) then (Tidak)
+    :Tampilkan pesan:\n"Wajah tidak dikenali"\nMahasiswa belum registrasi wajah;
+    stop
+else (Ya)
+endif
+
+if (Tingkat kepercayaan\n(confidence) ≥ 80%?) then (Tidak)
+    :Tampilkan pesan:\n"Confidence terlalu rendah"\nCoba posisi lebih baik;
+    note right
+        Penyebab:
+        - Cahaya kurang
+        - Wajah miring terlalu jauh
+        - Kualitas kamera rendah
+    end note
+    :Ulangi deteksi;
+else (Ya)
+endif
+
+if (Sudah absen hari ini?) then (Ya)
+    :Tampilkan pesan:\n"[Nama] sudah tercatat";
+    stop
+else (Tidak)
+endif
+
+:Absensi berhasil disimpan!
+- Nama mahasiswa
+- Jam masuk
+- Status: Hadir / Telat
+- Metode: Face ID
+- Confidence: XX%;
+
+:Bunyi "beep" tanda berhasil;
+
+:Nama mahasiswa pindah\nke daftar "Sudah Hadir";
+
+stop
+
+@enduml

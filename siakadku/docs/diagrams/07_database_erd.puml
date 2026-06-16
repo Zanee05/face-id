@@ -1,0 +1,189 @@
+@startuml ERD Database SIAKAD
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam ArrowColor #374151
+
+skinparam entity {
+    BackgroundColor #D1FAE5
+    BorderColor #059669
+    FontColor #065F46
+}
+
+title Entity Relationship Diagram - Database SIAKAD\nAbsensi Berbasis Face ID
+
+entity "users" as USERS {
+    * id : bigint <<PK>>
+    --
+    * name : varchar(255)
+    * email : varchar(255) <<unique>>
+    * password : varchar(255)
+    * role : enum(admin, dosen, mahasiswa)
+    email_verified_at : timestamp
+    remember_token : varchar(100)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "mahasiswas" as MHS {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    * nim : varchar(255)
+    * nama : varchar(255)
+    * kelas_id : bigint <<FK>>
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "dosens" as DOSEN {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    * nidn : varchar(255)
+    * nama : varchar(255)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "kelas" as KELAS {
+    * id : bigint <<PK>>
+    --
+    * nama_kelas : varchar(255)
+    * ruang_kelas : varchar(255)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "mata_kuliah" as MK {
+    * id : bigint <<PK>>
+    --
+    * dosen_id : bigint <<FK>>
+    * kode_mk : varchar(255)
+    * nama_mk : varchar(255)
+    * sks : tinyint(3)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "jadwal_kelas" as JADWAL {
+    * id : bigint <<PK>>
+    --
+    * kelas_id : bigint <<FK>>
+    * mata_kuliah_id : bigint <<FK>>
+    * hari : enum(senin..sabtu)
+    * jam_mulai : time
+    * jam_selesai : time
+    ruangan : varchar(255)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "mahasiswa_mata_kuliah" as MHS_MK {
+    * id : bigint <<PK>>
+    --
+    * mahasiswa_id : bigint <<FK>>
+    * mata_kuliah_id : bigint <<FK>>
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "attendance_sessions" as SESSION {
+    * id : bigint <<PK>>
+    --
+    * dosen_id : bigint <<FK>>
+    * kelas_id : bigint <<FK>>
+    * mata_kuliah_id : bigint <<FK>>
+    * method : enum(manual, barcode, faceid)
+    * session_date : date
+    start_time : time
+    end_time : time
+    barcode_token : varchar(255)
+    host_ip : varchar(255)
+    * is_active : tinyint(1)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "absensi" as ABSENSI {
+    * id : bigint <<PK>>
+    --
+    attendance_session_id : bigint <<FK>>
+    * mahasiswa_id : bigint <<FK>>
+    * mata_kuliah_id : bigint <<FK>>
+    * tanggal : date
+    jam_masuk : time
+    metode : varchar(255)
+    * status : enum(hadir, telat,\ntidak_hadir, izin, sakit)
+    confidence : double(8,2)
+    snapshot_path : varchar(255)
+    verification_status : enum(auto_valid,\npending_dosen,\napproved, rejected)
+    verified_by_dosen : bigint <<FK>>
+    verified_at : timestamp
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "face_data" as FACEDATA {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    * embedding : longtext\n(JSON array 128 float,\nL2 normalized)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "face_logs" as FACELOGS {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    absensi_id : bigint <<FK>>
+    * status : enum(success, failed)
+    distance : double(8,2)
+    confidence : double(8,2)
+    message : varchar(255)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "activity_logs" as ACTLOGS {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    * activity_type : varchar(255)
+    * description : varchar(255)
+    ip_address : varchar(255)
+    user_agent : varchar(255)
+    meta : longtext (JSON)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+' ─── RELASI ──────────────────────────────────────────────
+USERS   ||--o{ MHS      : "1 user → 1 mahasiswa"
+USERS   ||--o{ DOSEN    : "1 user → 1 dosen"
+USERS   ||--o{ FACEDATA : "1 user → 1 face_data"
+USERS   ||--o{ FACELOGS : "1 user → N face_logs"
+USERS   ||--o{ ACTLOGS  : "1 user → N activity_logs"
+
+KELAS   ||--o{ MHS      : "1 kelas → N mahasiswa"
+KELAS   ||--o{ JADWAL   : "1 kelas → N jadwal"
+KELAS   ||--o{ SESSION  : "1 kelas → N session"
+
+MK      ||--o{ JADWAL   : "1 MK → N jadwal"
+MK      ||--o{ SESSION  : "1 MK → N session"
+MK      ||--o{ ABSENSI  : "1 MK → N absensi"
+MK      ||--o{ MHS_MK   : "1 MK → N pivot"
+
+DOSEN   ||--o{ MK       : "1 dosen → N MK"
+DOSEN   ||--o{ SESSION  : "1 dosen → N session"
+
+MHS     ||--o{ MHS_MK   : "1 MHS → N pivot"
+MHS     ||--o{ ABSENSI  : "1 MHS → N absensi"
+
+SESSION ||--o{ ABSENSI  : "1 session → N absensi"
+
+ABSENSI ||--o{ FACELOGS : "1 absensi → N face_logs"
+
+@enduml

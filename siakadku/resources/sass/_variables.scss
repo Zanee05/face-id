@@ -1,0 +1,33 @@
+// Typography
+$font-family-sans-serif: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+$font-size-base: 0.95rem;
+$line-height-base: 1.55;
+
+// Colors
+$primary: #2563eb; // blue-600
+$secondary: #64748b; // slate-500
+$success: #16a34a; // green-600
+$danger: #dc2626; // red-600
+$warning: #f59e0b; // amber-500
+$info: #0ea5e9; // sky-500
+
+// Body
+$body-bg: #f6f8fc;
+$body-color: #0f172a; // slate-900
+
+// Components
+$enable-shadows: true;
+$border-radius: .9rem;
+$border-radius-sm: .7rem;
+$border-radius-lg: 1.1rem;
+$border-color: #e5e7eb;
+
+// Cards
+$card-border-color: rgba(2, 6, 23, 0.08);
+$card-box-shadow: 0 10px 26px rgba(2, 6, 23, 0.06);
+
+// Inputs
+$input-border-color: rgba(2, 6, 23, 0.14);
+$input-focus-border-color: rgba($primary, 0.5);
+$input-focus-box-shadow: 0 0 0 .25rem rgba($primary, 0.15);
+$btn-focus-box-shadow: $input-focus-box-shadow;

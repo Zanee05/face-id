@@ -1,0 +1,150 @@
+@startuml Sequence Diagram Absensi Face ID - Simple
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ArrowColor #374151
+skinparam SequenceArrowThickness 2
+skinparam SequenceGroupBorderThickness 1.5
+
+skinparam participant {
+    BackgroundColor #DBEAFE
+    BorderColor #2563EB
+    FontColor #1E3A8A
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #FEF3C7
+    BorderColor #D97706
+    FontColor #92400E
+    FontStyle bold
+}
+
+skinparam database {
+    BackgroundColor #D1FAE5
+    BorderColor #059669
+    FontColor #065F46
+    FontStyle bold
+}
+
+skinparam note {
+    BackgroundColor #FEF9C3
+    BorderColor #CA8A04
+    FontColor #713F12
+}
+
+skinparam sequence {
+    GroupBackgroundColor #F0FDF4
+    GroupBorderColor #16A34A
+    GroupFontColor #14532D
+    GroupHeaderFontStyle bold
+}
+
+title Sequence Diagram - Proses Absensi Face ID\nSIAKAD - Universitas PGRI Kanjuruhan Malang
+
+' ─── PESERTA ─────────────────────────────────────────────
+actor       "Mahasiswa"         as MHS
+actor       "Dosen"             as DOSEN
+participant "Halaman Kiosk\n(Browser)"     as UI
+participant "Kamera"            as CAM
+participant "Pendeteksi Wajah\n(face-api)" as FAPI
+participant "Server\n(Laravel)"  as SERVER
+database    "Database"          as DB
+
+' ═══════════════════════════════════════════════════════════
+== 1. Dosen Membuka Kiosk ==
+' ═══════════════════════════════════════════════════════════
+
+DOSEN -> UI    : Buka halaman Kiosk Face ID
+UI    -> FAPI  : Muat model pendeteksi wajah
+FAPI --> UI    : Model siap digunakan
+UI    -> CAM   : Nyalakan kamera
+CAM  --> UI    : Video tampil di layar
+UI   --> DOSEN : Kiosk siap, arahkan mahasiswa ke kamera
+
+' ═══════════════════════════════════════════════════════════
+== 2. Mahasiswa Berdiri di Depan Kamera ==
+' ═══════════════════════════════════════════════════════════
+
+MHS   -> CAM   : Berdiri di depan kamera\n(jarak 30-80 cm)
+CAM  --> UI    : Menangkap gambar wajah
+
+UI    -> FAPI  : Deteksi wajah dari gambar kamera
+FAPI --> UI    : Wajah ditemukan ✅\n(kotak hijau muncul)
+
+note over UI
+    Kotak hijau muncul
+    di sekitar wajah mahasiswa
+end note
+
+' ═══════════════════════════════════════════════════════════
+== 3. Sistem Mencocokkan Wajah ==
+' ═══════════════════════════════════════════════════════════
+
+UI -> SERVER : Kirim data wajah ke server\nuntuk dicocokkan
+
+SERVER -> DB  : Ambil data wajah semua mahasiswa\nyang terdaftar di mata kuliah ini
+DB --> SERVER : Data wajah mahasiswa
+
+SERVER -> SERVER : Cocokkan wajah yang dikirim\ndengan semua data yang tersimpan
+
+note over SERVER
+    Sistem menghitung seberapa mirip
+    wajah yang di-scan dengan
+    data wajah yang sudah terdaftar
+end note
+
+' ═══════════════════════════════════════════════════════════
+== 4a. Wajah Tidak Dikenali ==
+' ═══════════════════════════════════════════════════════════
+
+group Jika wajah TIDAK dikenali [Confidence < 80%]
+    SERVER --> UI  : ❌ Wajah tidak cocok
+    UI     --> MHS : Tampilkan pesan:\n"Wajah tidak dikenali"\natau "Confidence terlalu rendah"
+    note over MHS
+        Kemungkinan penyebab:
+        - Belum registrasi wajah
+        - Pencahayaan kurang
+        - Posisi wajah terlalu miring
+    end note
+end
+
+' ═══════════════════════════════════════════════════════════
+== 4b. Wajah Dikenali & Absensi Berhasil ==
+' ═══════════════════════════════════════════════════════════
+
+group Jika wajah DIKENALI [Confidence ≥ 80%]
+
+    SERVER -> DB   : Cek apakah mahasiswa\nsudah absen hari ini?
+    DB --> SERVER  : Belum absen
+
+    SERVER -> DB   : Simpan data kehadiran:\n- Nama mahasiswa\n- Jam masuk\n- Status: Hadir / Telat\n- Metode: Face ID\n- Tingkat kepercayaan (confidence)
+
+    DB --> SERVER  : Data tersimpan ✅
+
+    SERVER --> UI  : ✅ Absensi berhasil\nuntuk [Nama Mahasiswa]
+
+    UI --> MHS     : Tampilkan pesan sukses\n+ bunyi "beep"
+
+    UI -> UI       : Nama mahasiswa pindah\nke daftar "Sudah Hadir"
+
+    note over MHS, UI
+        Proses selesai!
+        Mahasiswa bisa meninggalkan kamera
+    end note
+
+end
+
+' ═══════════════════════════════════════════════════════════
+== 4c. Mahasiswa Sudah Absen Sebelumnya ==
+' ═══════════════════════════════════════════════════════════
+
+group Jika mahasiswa SUDAH ABSEN hari ini
+    SERVER -> DB   : Cek apakah sudah absen?
+    DB --> SERVER  : Sudah absen ✅
+    SERVER --> UI  : ℹ️ [Nama] sudah tercatat
+    UI --> MHS     : Tampilkan pesan:\n"Anda sudah absen hari ini"
+end
+
+@enduml

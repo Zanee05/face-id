@@ -1,0 +1,103 @@
+// Fonts
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+// Variables
+@import 'variables';
+
+// Bootstrap
+@import '~bootstrap/scss/bootstrap';
+
+// App theme
+:root {
+  --app-surface: #ffffff;
+  --app-surface-2: #f8fafc;
+  --app-border: rgba(2, 6, 23, 0.10);
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 0% 0%, rgba(37, 99, 235, 0.10), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(14, 165, 233, 0.12), transparent 60%),
+    $body-bg;
+}
+
+.app-navbar {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-bottom: 1px solid rgba(2, 6, 23, 0.08);
+}
+
+.app-brand {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-main {
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+.card {
+  border-color: rgba(2, 6, 23, 0.08);
+}
+
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(2, 6, 23, 0.08);
+  font-weight: 600;
+}
+
+.table > :not(caption) > * > * {
+  padding-top: .8rem;
+  padding-bottom: .8rem;
+}
+
+.table thead th {
+  color: rgba(15, 23, 42, 0.75);
+  font-weight: 600;
+}
+
+.btn {
+  font-weight: 600;
+}
+
+.badge {
+  font-weight: 600;
+}
+
+.auth-page {
+  min-height: calc(100vh - 88px);
+  display: flex;
+  align-items: center;
+}
+
+.auth-card {
+  border: 1px solid rgba(2, 6, 23, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.10);
+}
+
+.auth-hero {
+  background: linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%);
+  color: #fff;
+}
+
+.auth-hero h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.form-control, .form-select {
+  border-radius: 12px;
+}
+
+.dropdown-menu {
+  border-radius: 14px;
+  border-color: rgba(2, 6, 23, 0.10);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.12);
+}
